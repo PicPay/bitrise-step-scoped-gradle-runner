@@ -34,7 +34,6 @@ scopes = {
     all_modules: set(),
 }
 
-
 def main():
     # sets execution directory
     os.chdir(project_location)
@@ -64,8 +63,8 @@ def build_command():
 
 def get_available_tasks():
     cmd = "./gradlew tasks --all | grep {0}".format(gradle_task)
-    result = subprocess.Popen(cmd, stdout=subprocess.PIPE, shell=True)
-    return result.stdout.read()
+    result = subprocess.check_output(cmd, shell=True)
+    return result.decode('utf-8')
 
 def contains_task(task, available_tasks):
     return task in available_tasks
