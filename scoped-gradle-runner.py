@@ -102,20 +102,33 @@ def extract_previosly_evaluated_scope_from_env(scope):
     changes = eval(changes)
     scopes[scope].update(changes)
 
-def evaluate_changes():
+def build_changed_files_scope():
     # Parse git diff to retrieve all changed files
     diff = os.popen('git diff --name-only {0}..{1}'.format(target_branch, source_branch))
     diff = diff.read()
     diff = diff.splitlines()
 
     scopes[changed_files].update(diff)
-    
+
+def build_all_modules_scope():
     # Parse settings.gradle to retrieve all project's modules
     settings_gradle = 'settings.gradle'
+    double_quoted = '("([^"]|"")*")'
+    single_quoted = "('([^']|'')*')"
+    regex = re.compile('({0}|{1})'.format(single_quoted, double_quoted))
     with open(settings_gradle, 'r') as settings:
         for line in settings:
-            if(line.startswith('include')):
-                scopes[all_modules].add(extract_module(line))
+            matches = regex.finditer(line)
+            for match in matches:
+                module = match.group(0)
+                module = module[2:-1]
+                module = module.replace(':', '/')
+                scopes[all_modules].add(module)
+    
+def evaluate_changes():
+    build_all_modules_scope()
+
+    build_changed_files_scope()
 
     # Check which modules were changed by checking if
     # the changed files belongs to any of the modules.
@@ -177,7 +190,6 @@ def evaluate_changes():
 def set_env(key, value):
     key = "SCOPED_GRADLE_RUNNER_" + key.upper()
     cmd = 'envman add --key {0} --value "{1}"'.format(key, value)
-    print(cmd, flush=True)
     subprocess.run(cmd, shell=True, check=True)
 
 def extract_module(line):
