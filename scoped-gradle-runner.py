@@ -63,7 +63,6 @@ def build_command():
 
 def build_tasks(scoped_modules):
     available_tasks = get_available_tasks()
-    print(available_tasks)
     tasks = ''
     for module in scoped_modules:
         module = module.replace('/', ':')
