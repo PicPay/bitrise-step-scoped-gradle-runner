@@ -61,6 +61,20 @@ def build_command():
     else:
         return './{0} {1} {2}'.format('gradlew', tasks, gradle_options)
 
+def build_tasks(scoped_modules):
+    available_tasks = get_available_tasks()
+    print(available_tasks)
+    tasks = ''
+    for module in scoped_modules:
+        module = module.replace('/', ':')
+        task = module + ':' + gradle_task
+        if(contains_task(task, available_tasks)):
+            tasks += ':' + task + ' '
+        else:
+            print('Task {0} does not exist.'.format(task), flush=True)
+    
+    return tasks
+
 def get_available_tasks():
     cmd = "./gradlew tasks --all | grep {0}".format(gradle_task)
     result = subprocess.check_output(cmd, shell=True)
@@ -68,19 +82,6 @@ def get_available_tasks():
 
 def contains_task(task, available_tasks):
     return task in available_tasks
-
-def build_tasks(scoped_modules):
-    available_tasks = get_available_tasks()
-    tasks = ''
-    for module in scoped_modules:
-        module = module.replace('/', ':')
-        task = ':' + module + ':' + gradle_task
-        if(contains_task(task, available_tasks)):
-            tasks += task + ' '
-        else:
-            print(flush='Task {0} does not exist.'.format(task))
-    
-    return tasks
 
 def build_scopes_map():
     print(flush=True)
