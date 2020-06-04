@@ -34,6 +34,7 @@ scopes = {
     all_modules: set(),
 }
 
+
 def main():
     # sets execution directory
     os.chdir(project_location)
@@ -61,11 +62,25 @@ def build_command():
     else:
         return './{0} {1} {2}'.format('gradlew', tasks, gradle_options)
 
+def get_available_tasks():
+    cmd = "./gradlew tasks --all | grep {0}".format(gradle_task)
+    result = subprocess.Popen(cmd, stdout=subprocess.PIPE, shell=True)
+    return result.stdout.read()
+
+def contains_task(task, available_tasks):
+    return task in available_tasks
+
 def build_tasks(scoped_modules):
+    available_tasks = get_available_tasks()
     tasks = ''
     for module in scoped_modules:
         module = module.replace('/', ':')
-        tasks += ':' + module + ':' + gradle_task + ' '
+        task = ':' + module + ':' + gradle_task
+        if(contains_task(task, available_tasks)):
+            tasks += task + ' '
+        else:
+            print(flush='Task {0} does not exist.'.format(task))
+    
     return tasks
 
 def build_scopes_map():
