@@ -3,21 +3,29 @@ import re
 import os
 import subprocess
 
-# obtains required inputs
-source_branch='origin/' + os.getenv('BITRISEIO_GIT_BRANCH_DEST')
-target_branch='origin/' + os.getenv('BITRISE_GIT_BRANCH')
-
 project_location = os.getenv('project_location')
 gradle_scope = os.getenv('gradle_scope')
 gradle_task = os.getenv('gradle_task')
 gradle_options = os.getenv('gradle_options')
+default_branch = os.getenv('default_branch')
 gradlew_path = project_location + '/gradlew'
 
 print('\nConfigs:', flush=True)
 print('\t{0}: {1}'.format('project_location', project_location), flush=True)
 print('\t{0}: {1}'.format('gradle_scope', gradle_scope), flush=True)
 print('\t{0}: {1}'.format('gradle_task', gradle_task), flush=True)
+print('\t{0}: {1}'.format('default_branch', default_branch), flush=True)
 print('\t{0}: {1}'.format('gradle_options', gradle_options), flush=True)
+
+# obtains required inputs
+def get_target_branch(pr_target):
+    if pr_target == None:
+        return default_branch
+    else:
+        return pr_target
+
+source_branch = 'origin/' + os.getenv('BITRISE_GIT_BRANCH')
+target_branch = get_target_branch(os.getenv('BITRISEIO_GIT_BRANCH_DEST'))
 
 # variables definition
 was_executed_previosly = "was_executed_previosly"
@@ -46,6 +54,13 @@ def main():
         subprocess.run(cmd, shell=True, check=True)
     else:
         print('There were no tasks to be executed in the selected scope.', flush=True)
+
+def shell_command(command):
+    print('$ {}\n'.format(command))
+    result = os.popen(command)
+    if result != None:
+        print(result.read() + '\n')
+    return result
 
 def build_command():
     tasks = ""
@@ -118,10 +133,12 @@ def extract_previosly_evaluated_scope_from_env(scope):
 
 def build_changed_files_scope():
     # Parse git diff to retrieve all changed files
-    diff = os.popen('git diff --name-only {0}..{1}'.format(target_branch, source_branch))
+    shell_command('git "fetch" "--no-tags" "origin" "refs/heads/{}"'.format(target_branch))
+    diff = shell_command('git diff --name-only origin/{0}...{1}'.format(target_branch, source_branch))
     diff = diff.read()
     diff = diff.splitlines()
 
+    print('Changed modules: ' + ', '.join(diff) + '\n')
     scopes[changed_files].update(diff)
 
 def build_all_modules_scope():
@@ -207,8 +224,10 @@ def set_env(key, value):
     subprocess.run(cmd, shell=True, check=True)
 
 def extract_module(line):
+    print('Extracting module for: ' + line)
     single_quoted = re.compile("(?<=')[^']+(?=')")
     double_quoted = re.compile("(?<=\")[^']+(?=\")")
+    print(line)
 
     module = single_quoted.search(line)
     if(module is None):

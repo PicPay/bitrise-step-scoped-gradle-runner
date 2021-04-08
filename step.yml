@@ -61,13 +61,22 @@ inputs:
         You can call `gradle tasks` or `gradle tasks --all` in your
         Gradle project directory to get the list of available tasks.
       is_required: true
+  - default_branch:
+    opts:
+      title: Default branch for diff comparison
+      description: |
+        By default this step will look for a target branch that
+        should be availble when triggered by a Pull Request. If
+        there's no target branch available, this step will fallback
+        to this default branch.
+      is_required: true
   - gradle_options: "--stacktrace --no-daemon"
     opts:
       title: Additional options for Gradle call
       description: |-
         Options added to the end of the Gradle call.
         You can use multiple options, separated by a space
-        character. Example: `--stacktrace --debug`  
+        character. Example: `--stacktrace --debug`
 
 outputs:
   - SCOPED_GRADLE_RUNNER_CHANGED_FILES:
